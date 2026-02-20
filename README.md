@@ -17,6 +17,20 @@ A county-level analysis of prenatal care access gaps across North Carolina, with
 
 ---
 
+## Maps
+
+<img src="outputs/figures/map_provider_density.png" width="900"/>
+
+*27 of 100 NC counties have zero OB/GYN providers (gray). Care is concentrated in a handful of urban counties while Western NC and the eastern coastal plain are largely underserved.*
+
+<br/>
+
+<img src="outputs/figures/map_burden_index.png" width="900"/>
+
+*Composite burden index combining inverse provider density, % uninsured women, and % poverty across all 100 counties. High-burden counties appear in both WNC and the eastern coastal plain — different geographies, similar structural gaps.*
+
+---
+
 ## Data Sources
 
 | Source | Variables | County Coverage |
@@ -39,7 +53,7 @@ A county-level analysis of prenatal care access gaps across North Carolina, with
 
 **Composite burden index:** MinMax-normalized equal-weight composite of inverse provider density, % uninsured women, and % poverty — built on all 100 counties to avoid CDC WONDER suppression excluding WNC entirely
 
-**OLS regression:** Predictors of late/no prenatal care (28-county CDC WONDER subset); R²=0.436, F-stat p=0.025; interpret with caution given small n
+**OLS regression:** Predictors of late/no prenatal care (28-county CDC WONDER subset); R²=0.436, F-stat p=0.025; interpret with caution given small n and high VIF on poverty/vehicle collinearity
 
 ---
 
@@ -47,10 +61,10 @@ A county-level analysis of prenatal care access gaps across North Carolina, with
 
 | Figure | Description |
 |--------|-------------|
-| `map_provider_density.png` | Choropleth — OB/GYNs per 10K women; zeros in gray, Blues scale for non-zero; WNC and Helene-impacted boundaries overlaid |
+| `map_provider_density.png` | Choropleth — OB/GYNs per 10K women; zeros in gray, Blues scale for non-zero |
 | `map_burden_index.png` | Composite burden tier map — High/Medium/Low burden across all 100 counties |
 | `correlation_heatmap.png` | Spearman correlation matrix — SDOH and provider supply indicators |
-| `regional_bar_charts.png` | WNC vs. Piedmont/Coastal mean comparisons |
+| `regional_bar_charts.png` | WNC vs. Piedmont/Coastal mean comparisons across 5 variables |
 | `provider_density_distribution.png` | Histogram + regional boxplot of provider density |
 | `wnc_scatterplot.png` | Provider density vs. late/no prenatal care (28-county WONDER subset) |
 
@@ -77,7 +91,7 @@ nc-prenatal-care-access/
 │       └── wnc_county_profiles.csv              # Western NC deep dive table
 ├── outputs/
 │   ├── figures/                                 # All 6 visualizations (PNG)
-│   └── tables/                                  # Summary stats, regression, Mann-Whitney (CSV/TXT)
+│   └── tables/                                  # Summary stats, regression, Mann-Whitney
 └── README.md
 ```
 
@@ -88,12 +102,10 @@ nc-prenatal-care-access/
 ## How to Run
 
 ```bash
-# Clone the repo
 git clone https://github.com/JohnApelJr/nc-prenatal-care-access.git
 cd nc-prenatal-care-access
-
-# Open in Jupyter or upload to Google Colab
-# Run cells top-to-bottom — all data pulls are automated except CDC WONDER (Cell 5)
+# Open notebook/NC_Prenatal_Care_Analysis_CLEAN.ipynb in Jupyter or Google Colab
+# Run cells top-to-bottom — all data pulls automated except CDC WONDER (Cell 5)
 ```
 
 **Requirements:** Python 3.10+, `geopandas`, `pygris`, `pandas`, `numpy`, `matplotlib`, `seaborn`, `scipy`, `statsmodels`, `scikit-learn`, `requests`
