@@ -1,115 +1,111 @@
-# NC Pediatric Access — Travel-Time Pipeline
-**Time-to-Care | Western NC Pilot | Phase 2**
+# NC Prenatal Care Access Analysis
+### Mapping Maternal Health Deserts Across North Carolina's 100 Counties
 
-Calculates drive-time from Census block group centroids to nearest pediatric specialist  
-by specialty across 18 WNC counties. Extends the Phase 1 NPI provider supply analysis  
-with actual routing distances to quantify functional access gaps.
+**HRSA AHRF · Census ACS · HPSA · CDC WONDER · GeoPandas · Statsmodels**
+
+A county-level analysis of prenatal care access gaps across North Carolina, with a focus on Western NC — a region whose pre-existing provider shortages were amplified by Hurricane Helene (September 2024). Integrates five federal data sources to build a composite burden index, identify zero-provider counties, and surface structural patterns that standard SDOH analyses miss.
 
 ---
 
-## Outputs
+## Key Findings
 
-| Output | Description |
+- **27 of 100 NC counties have zero OB/GYN providers** — statewide median is 0.9 per 10,000 women of reproductive age
+- **96 of 100 counties carry active maternity care HPSA designations**, reflecting near-universal shortage status across the state
+- **All 23 Western NC counties are suppressed in CDC WONDER** natality data — the federal surveillance system is blind to the region most at risk, a finding consistent with Runkle & Sugg (2025, *NC Medical Journal*)
+- **WNC's crisis is not explained by standard SDOH**: Mann-Whitney U tests show no significant regional difference in provider density, poverty, or vehicle access — only insurance coverage (p<0.001) and broadband (p=0.03) differ, both in WNC's favor. Geographic isolation and infrastructure loss are the more likely drivers
+- **Watauga County tops the composite burden index** (0.90/1.0), driven by high uninsured rates among a large student-age population and zero OB/GYN subspecialists
+
+---
+
+## Data Sources
+
+| Source | Variables | County Coverage |
+|--------|-----------|-----------------|
+| Census ACS 2023 (5-yr) | Insurance, poverty, vehicle access, broadband | 100/100 |
+| HRSA AHRF 2024–2025 | OB/GYN provider counts (general + subspecialty) | 100/100 |
+| HRSA HPSA Primary Care file | Maternity Care shortage scores (PC MCTA) | 96/100 |
+| USDA Rural-Urban Continuum Codes 2023 | Rural classification (1–9 scale) | 100/100 |
+| CDC WONDER Natality 2016–2024 | Prenatal care trimester initiation rates | 28/100 (suppression) |
+
+---
+
+## Methods
+
+**Data pipeline:** Multi-source integration across Census API, HRSA, USDA, and CDC; county-level FIPS-keyed master dataset; automated downloads for all sources except CDC WONDER (manual export required due to anti-scraping policy)
+
+**Provider density:** OB/GYN providers per 10,000 women of reproductive age (15–44); source is HRSA AHRF `tot_md_do_obgyn_gen_23` + `md_nf_obgyn_subsp_23`
+
+**Regional comparison:** Mann-Whitney U (non-parametric) for Western NC vs. rest of state; 23 WNC counties defined by Appalachian Regional Commission designation
+
+**Composite burden index:** MinMax-normalized equal-weight composite of inverse provider density, % uninsured women, and % poverty — built on all 100 counties to avoid CDC WONDER suppression excluding WNC entirely
+
+**OLS regression:** Predictors of late/no prenatal care (28-county CDC WONDER subset); R²=0.436, F-stat p=0.025; interpret with caution given small n
+
+---
+
+## Visualizations
+
+| Figure | Description |
 |--------|-------------|
-| Drive-time maps | Interactive Folium map per specialty showing access tiers |
-| Composite burden map | All-specialty combined burden choropleth with top-priority markers |
-| County summary table | Planner-ready CSV with median drive times and unreachable child counts |
-| Priority community list | Top 25 block groups ranked by access burden score (children × drive time) |
+| `map_provider_density.png` | Choropleth — OB/GYNs per 10K women; zeros in gray, Blues scale for non-zero; WNC and Helene-impacted boundaries overlaid |
+| `map_burden_index.png` | Composite burden tier map — High/Medium/Low burden across all 100 counties |
+| `correlation_heatmap.png` | Spearman correlation matrix — SDOH and provider supply indicators |
+| `regional_bar_charts.png` | WNC vs. Piedmont/Coastal mean comparisons |
+| `provider_density_distribution.png` | Histogram + regional boxplot of provider density |
+| `wnc_scatterplot.png` | Provider density vs. late/no prenatal care (28-county WONDER subset) |
 
 ---
 
-## Setup
+## Contextual Note — Hurricane Helene
 
-```bash
-git clone https://github.com/JohnApelJr/nc-travel-time-pipeline.git
-cd nc-travel-time-pipeline
-pip install pandas numpy geopandas folium mapclassify matplotlib requests uszipcode
-```
+Eight WNC counties (Buncombe, Haywood, Henderson, McDowell, Mitchell, Rutherford, Transylvania, Yancey) experienced significant healthcare infrastructure disruption from Hurricane Helene in September 2024. This analysis treats Helene as amplifying pre-existing structural gaps rather than creating them. Per Runkle & Sugg (2025), 6 labor and delivery units closed in WNC between 2015 and 2024, and only half of local facilities offered prenatal/delivery care before the storm.
 
-### API Keys Required
-- **OpenRouteService** (free): https://openrouteservice.org/dev/#/signup  
-  Free tier: 2,000 matrix requests/day — sufficient for 18-county WNC pilot
-- **Census API** (free): https://api.census.gov/data/key_signup.html
-
-Set as environment variables:
-```bash
-export ORS_API_KEY=your_key_here
-export CENSUS_API_KEY=your_key_here
-```
-
----
-
-## Data Requirements
-
-Place your Phase 1 NPI pipeline output at `data/raw/npi_providers_nc.csv`  
-with the following columns:
-
-| Column | Description |
-|--------|-------------|
-| `npi` | National Provider Identifier |
-| `provider_name` | Provider name |
-| `specialty` | Specialty label (must match SPECIALTIES list in config) |
-| `zip_code` | 5-digit ZIP code |
-| `county_fips` | 5-digit county FIPS |
-
----
-
-## Access Tier Classification
-
-| Tier | Drive Time |
-|------|------------|
-| Accessible | ≤ 30 minutes |
-| Burdened | 31–60 minutes |
-| Significantly Burdened | 61–90 minutes |
-| Effectively Unreachable | > 90 minutes |
-| No Provider | No provider found in NC |
-
----
-
-## Priority Score
-
-`access_burden_score = child_population × (mean_drive_minutes / 30)`
-
-Higher score = more children with longer drives = higher planning priority  
-for mobile clinic siting, telehealth hub placement, or grant applications.
-
----
-
-## Specialties (Phase 2)
-
-Pediatric Neurology · PT/OT/SLP · Developmental Pediatrics · Pediatric Cardiology  
-Behavioral Health · Audiology · ENT · Vision
-
-*GI and Nutrition reserved for Time-to-Care platform build*
-
----
-
-## Methodology Notes
-
-- Provider locations derived from ZIP centroids (~2–5 mi positional error)
-- ~10–20 min routing error possible in WNC mountain terrain
-- Flag as limitation; Phase 3 upgrade: geocode full street addresses
-- Drive-time assumes average speeds; no traffic or seasonal conditions
+> Runkle, J. & Sugg, M. (2025). Rebuilding Maternal Health Access in Western North Carolina: Addressing Critical Gaps Amplified by Hurricane Helene. *NC Medical Journal, 86*(1), 8–11. https://doi.org/10.18043/001c.137497
 
 ---
 
 ## Repository Structure
 
 ```
-nc-travel-time-pipeline/
-├── notebooks/
-│   └── travel_time_pipeline.ipynb
+nc-prenatal-care-access/
+├── notebook/
+│   └── NC_Prenatal_Care_Analysis_CLEAN.ipynb   # Full analysis notebook
 ├── data/
-│   ├── raw/           ← Place npi_providers_nc.csv here
-│   └── processed/     ← Generated: OD matrix, classified GeoPackage
-├── figures/
-├── maps/              ← Generated: HTML interactive maps
-├── outputs/           ← Generated: CSV summary tables
+│   └── processed/                               # Merged county-level dataset
+│       ├── master_county.csv                    # 100 counties × 32 variables
+│       ├── burden_index.csv                     # Composite burden scores + tiers
+│       └── wnc_county_profiles.csv              # Western NC deep dive table
+├── outputs/
+│   ├── figures/                                 # All 6 visualizations (PNG)
+│   └── tables/                                  # Summary stats, regression, Mann-Whitney (CSV/TXT)
 └── README.md
 ```
 
+> **Note on raw data:** Raw files from HRSA, USDA, and ACS are pulled automatically by the notebook at runtime. The CDC WONDER `.txt` file requires a manual export from https://wonder.cdc.gov/natality-current.html (see notebook Cell 5 for instructions).
+
 ---
 
-## Author
-John Apel · M.S. Applied Data Science — Syracuse University  
-[Portfolio](https://johnapeljr.github.io) · [LinkedIn](https://linkedin.com/in/johnapeljr) · [GitHub](https://github.com/JohnApelJr)
+## How to Run
+
+```bash
+# Clone the repo
+git clone https://github.com/JohnApelJr/nc-prenatal-care-access.git
+cd nc-prenatal-care-access
+
+# Open in Jupyter or upload to Google Colab
+# Run cells top-to-bottom — all data pulls are automated except CDC WONDER (Cell 5)
+```
+
+**Requirements:** Python 3.10+, `geopandas`, `pygris`, `pandas`, `numpy`, `matplotlib`, `seaborn`, `scipy`, `statsmodels`, `scikit-learn`, `requests`
+
+---
+
+## Related Projects
+
+- [nc-pediatric-access-pipeline](https://github.com/JohnApelJr/nc-pediatric-access-pipeline) — Pediatric specialist supply vs. child population demand across NC's 100 counties
+- [chronic-disease-geospatial-pipeline](https://github.com/JohnApelJr/chronic-disease-geospatial-pipeline) — Chronic disease disparities across 2,956 U.S. counties
+
+---
+
+*M.S. Applied Data Science · Syracuse University · February 2026*  
+*Contact: [johnapeljr@gmail.com](mailto:johnapeljr@gmail.com) · [Portfolio](https://johnapeljr.github.io)*
