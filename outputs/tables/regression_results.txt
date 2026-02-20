@@ -1,0 +1,37 @@
+                             OLS Regression Results                             
+================================================================================
+Dep. Variable:     pct_late_no_prenatal   R-squared:                       0.436
+Model:                              OLS   Adj. R-squared:                  0.302
+Method:                   Least Squares   F-statistic:                     3.247
+Date:                  Fri, 20 Feb 2026   Prob (F-statistic):             0.0251
+Time:                          18:48:46   Log-Likelihood:                -53.630
+No. Observations:                    27   AIC:                             119.3
+Df Residuals:                        21   BIC:                             127.0
+Df Model:                             5                                         
+Covariance Type:              nonrobust                                         
+=======================================================================================
+                          coef    std err          t      P>|t|      [0.025      0.975]
+---------------------------------------------------------------------------------------
+const                   0.9581      3.043      0.315      0.756      -5.370       7.286
+providers_per_10k      -0.3585      0.198     -1.809      0.085      -0.771       0.054
+pct_uninsured_women     0.1809      0.102      1.776      0.090      -0.031       0.393
+pct_poverty             0.0404      0.172      0.234      0.817      -0.318       0.399
+pct_no_vehicle          0.1145      0.430      0.266      0.793      -0.780       1.009
+rural_binary            2.4321      1.474      1.651      0.114      -0.632       5.497
+==============================================================================
+Omnibus:                        0.758   Durbin-Watson:                   2.306
+Prob(Omnibus):                  0.685   Jarque-Bera (JB):                0.704
+Skew:                           0.002   Prob(JB):                        0.703
+Kurtosis:                       2.209   Cond. No.                         281.
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+
+VIF:
+              Variable        VIF
+0    providers_per_10k   3.006141
+1  pct_uninsured_women  17.045549
+2          pct_poverty  38.419641
+3       pct_no_vehicle  35.641763
+4         rural_binary   1.578908
